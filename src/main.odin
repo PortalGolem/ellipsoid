@@ -1,11 +1,14 @@
 package main
 
 import "core:fmt"
+import "core:math"
 import "vendor:sdl3"
 
 Color :: [4]u8
 
 main :: proc() {
+  
+  // begin initilization
 
   if !sdl3.Init({.VIDEO}) {
     fmt.println(sdl3.GetError())
@@ -21,6 +24,10 @@ main :: proc() {
   assert(renderer != nil)
   defer sdl3.DestroyWindow(window)
   defer sdl3.DestroyRenderer(renderer)
+  
+  // end initilization
+  
+  //main loop
 
   i:int = 0
   tick_loop: for {
@@ -35,12 +42,11 @@ main :: proc() {
 
     background_color: Color
 
-    background_color.rgb = u8(i/20 % 256)
+    background_color.rgb = u8(abs(((i/20 + 128)%255) - 128))
     background_color.a = 255
 
     sdl3.SetRenderDrawColor(renderer, expand_values(background_color))
     sdl3.RenderClear(renderer)
     sdl3.RenderPresent(renderer)
-    fmt.println("Hello")
   }
 }
