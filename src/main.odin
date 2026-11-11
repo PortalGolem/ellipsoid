@@ -6,8 +6,8 @@ import "core:math/linalg"
 import "vendor:sdl3"
 
 Color :: [4]u8
-Vector3 :: [3]f16
-Ellipse :: struct {foci : [2]Vector3, distance : f16}
+Vector3 :: [3]f32
+Ellipse :: struct {foci : [2]Vector3, distance, locus : f32}
 
 main :: proc() {
  
@@ -45,12 +45,10 @@ main :: proc() {
     h = 500,
   }
 
-
-  append(&Ellipses, 
-    Ellipse {
-      foci = {{100.0, 100.0, 100.0}, {0.0, 0.0, 0.0}}, 
-      distance = 10.0
-    }
+  CreateEllipse(&Ellipses, 
+    {500.0, 500.0, 100.0},
+    {100.0, 100.0, 100.0},
+    100.0
   )
  
   // end initilization
@@ -78,16 +76,18 @@ main :: proc() {
     }
 
     for ellipse in Ellipses {
+      ellipseColor : Color = {255, 255, 0, 255}
+      fmt.printf("Drawing ellipse")
+      DrawEllipse(surface, ellipse, ellipseColor)
       RenderPoint(surface, i32(ellipse.foci[0].x), i32(ellipse.foci[0].y), 10, 0x000000FF)
       RenderPoint(surface, i32(ellipse.foci[1].x), i32(ellipse.foci[1].y), 10, 0x000000FF)
-
     }
     
     sdl3.UpdateTexture(texture, nil, surface.pixels, surface.pitch)
 
     background_color: Color
 
-    background_color.rgb = u8(abs(((i/20 + 128)%255) - 128))
+    background_color.rgb = u8(abs(((i + 255)%510) - 255))
     background_color.a = 255
 
     sdl3.SetRenderDrawColor(renderer, expand_values(background_color))
@@ -99,7 +99,34 @@ main :: proc() {
   }
 }
 
-GetEllipseLocus :: proc(ellipse:^Ellipse) -> f16 {
+DrawEllipse :: proc(surface:^sdl3.Surface, ellipse:Ellipse, color:Color) {
+  for i:i32; i < surface.h; i += 1 {
+    foundLine := false
+    for n:i32; n < surface.w; n += 1 {
+      vector : Vector3 = {f32(n), f32(i), 0.0}
+      d1 := linalg.distance(vector, ellipse.foci[0])
+      d2 := linalg.distance(vector, ellipse.foci[1])
+
+      fmt.println(d1 + d2)
+      if d1 + d2 < ellipse.locus + ellipse.distance {
+        foundLine = true
+        sdl3.WriteSurfacePixel(surface, i, n, expand_values(color))
+      } else if foundLine {
+        break
+      }
+    }
+  }
+}
+
+CreateEllipse :: proc(ellipses:^[dynamic]Ellipse, focus1 : Vector3, focus2 : Vector3, distance : f32) {
+  append(ellipses, Ellipse {
+    foci = {focus1, focus2},
+    distance = distance,
+    locus = linalg.distance(focus1, focus2),
+  })
+}
+
+GetEllipseLocus :: proc(ellipse:Ellipse) -> f32 {
   return linalg.distance(ellipse.foci[0], ellipse.foci[1])
 }
 
